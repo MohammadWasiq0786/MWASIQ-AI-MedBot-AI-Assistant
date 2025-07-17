@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🧠 MWASIQ AI MedBot Assistant</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(ellipse at top, #0f2027, #203a43, #2c5364);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: white;
+    }
+
+    .chat-container {
+      width: 95%;
+      max-width: 600px;
+      height: 85vh;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(18px);
+      border-radius: 20px;
+      margin-top: 30px;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(0,255,255,0.15), 0 0 50px rgba(0,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .header {
+      font-size: 22px;
+      font-weight: 600;
+      color: #00ffe5;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 0 0 10px #00ffe5;
+    }
+
+    .chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .msg {
+      display: flex;
+      margin-bottom: 15px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .msg.user {
+      justify-content: flex-end;
+    }
+
+    .msg.bot {
+      justify-content: flex-start;
+    }
+
+    .bubble {
+      max-width: 75%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      position: relative;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .msg.user .bubble {
+      background: #00ffe5;
+      color: #222;
+      border-bottom-right-radius: 0;
+    }
+
+    .msg.bot .bubble {
+      background: rgba(255, 255, 255, 0.08);
+      color: #eee;
+      border-bottom-left-radius: 0;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .bubble p, .bubble ul, .bubble strong {
+      margin: 0;
+    }
+
+    .bubble ul {
+      padding-left: 20px;
+      margin-top: 5px;
+    }
+
+    .avatar {
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      margin: 0 8px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .msg.bot .avatar {
+      background-image: url('https://i.imgur.com/8Km9tLL.png');
+    }
+
+    .msg.user .avatar {
+      background-image: url('https://i.imgur.com/1XqN9UR.png');
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px 18px;
+      border-radius: 30px;
+      border: none;
+      outline: none;
+      font-size: 15px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    button {
+      padding: 12px 20px;
+      border-radius: 30px;
+      background: #00ffe5;
+      border: none;
+      font-weight: bold;
+      color: #222;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #00dac9;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toolbar {
+      margin-top: 10px;
+      text-align: right;
+    }
+
+    .toolbar button {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .toolbar button:hover {
+      background: #00ffe5;
+      color: #000;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 15px 0;
+      font-size: 14px;
+      color: #aaa;
+    }
+
+    .footer a {
+      color: #00ffe5;
+      margin: 0 10px;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="chat-container">
+    <div class="header">🧠 MWASIQ AI MedBot AI Assistant</div>
+
+    <div class="chat-box" id="chat-box"></div>
+
+    <div class="input-area">
+      <input type="text" id="user-input" placeholder="Describe your symptoms..." onkeydown="if(event.key==='Enter') sendMessage()" />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="toolbar">
+      <button onclick="downloadMarkdown()">⬇️ Download</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Made with ❤️ by MWASIQ AI | 
+    <a href="https://github.com/MohammadWasiq0786" target="_blank">GitHub</a> |
+    <a href="#">Privacy</a> |
+    <a href="mailto:mohammadwasiq0786@gmail.com">Contact</a>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const conversation = [];
+
+    function parseMarkdown(text) {
+      // Basic markdown parser for strong, lists, and newlines
+      let html = text
+        .replace(/^### (.*$)/gim, '<strong>$1</strong>')
+        .replace(/^[-*] (.*$)/gim, '<ul><li>$1</li></ul>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+      // Clean up multiple <ul>s
+      html = html.replace(/<\/ul><ul>/g, '');
+      return html;
+    }
+
+    function appendMessage(role, text) {
+      const msg = document.createElement('div');
+      msg.classList.add('msg', role);
+
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+
+      bubble.innerHTML = role === 'bot' ? parseMarkdown(text) : text;
+
+      if (role === 'bot') {
+        msg.appendChild(avatar);
+        msg.appendChild(bubble);
+      } else {
+        msg.appendChild(bubble);
+        msg.appendChild(avatar);
+      }
+
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      conversation.push({ role, text });
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById("user-input");
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendMessage("user", message);
+      input.value = "";
+
+      const typing = document.createElement("div");
+      typing.classList.add("msg", "bot");
+      typing.innerHTML = `<div class="avatar"></div><div class="bubble">MWASIQ AI MedBot is typing...</div>`;
+      chatBox.appendChild(typing);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+
+        const data = await res.json();
+        chatBox.removeChild(typing);
+
+        if (data.response) {
+          appendMessage("bot", data.response);
+        } else {
+          appendMessage("bot", "⚠️ Error: " + (data.error || "Unknown error"));
+        }
+      } catch (err) {
+        chatBox.removeChild(typing);
+        appendMessage("bot", "⚠️ Server error. Please try again later.");
+      }
+    }
+
+    function downloadMarkdown() {
+      let md = `# MWASIQ AI MedBot AI Assistant\n\n`;
+      conversation.forEach(({ role, text }) => {
+        const prefix = role === 'user' ? '**You:**' : '**MedBot:**';
+        md += `${prefix} ${text}\n\n`;
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'MWASIQ_MedBot_Chat.md';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  </script>
+</body>
+</html>
